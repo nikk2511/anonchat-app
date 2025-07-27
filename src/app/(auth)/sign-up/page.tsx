@@ -25,13 +25,11 @@ import { signUpSchema } from '@/schemas/signUpSchema';
 import { motion } from 'framer-motion';
 
 export default function SignUpForm() {
-  const [username, setUsername] = useState('');
   const [usernameMessage, setUsernameMessage] = useState('');
   const [isCheckingUsername, setIsCheckingUsername] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const debouncedUsername = useDebounceValue(username, 300);
-
+  
   const router = useRouter();
   const { toast } = useToast();
 
@@ -43,6 +41,9 @@ export default function SignUpForm() {
       password: '',
     },
   });
+
+  const username = form.watch('username');
+  const debouncedUsername = useDebounceValue(username, 300);
 
   useEffect(() => {
     const checkUsernameUnique = async () => {
@@ -71,6 +72,16 @@ export default function SignUpForm() {
   }, [debouncedUsername]);
 
   const onSubmit = async (data: z.infer<typeof signUpSchema>) => {
+    // Additional validation before submission
+    if (usernameMessage !== 'Username is unique') {
+      toast({
+        title: 'Validation Error',
+        description: 'Please ensure your username is available before submitting.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const response = await axios.post<ApiResponse>('/api/sign-up', data);
@@ -177,10 +188,7 @@ export default function SignUpForm() {
                         {...field}
                         placeholder="Choose a unique username"
                         className="pl-10 pr-10 h-12 bg-background/50 border-border/50 focus:bg-background focus:border-primary/50 transition-all"
-                        onChange={(e) => {
-                          field.onChange(e);
-                          setUsername(e.target.value);
-                        }}
+                        onChange={field.onChange}
                       />
                       {(() => {
                         const status = getUsernameStatus();
@@ -263,7 +271,7 @@ export default function SignUpForm() {
               >
                 <Button
                   type="submit"
-                  disabled={isSubmitting || isCheckingUsername || usernameMessage !== 'Username is unique'}
+                  disabled={isSubmitting || isCheckingUsername || (username && usernameMessage !== 'Username is unique')}
                   className="w-full h-12 text-lg font-semibold bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 transition-all"
                 >
                   {isSubmitting ? (

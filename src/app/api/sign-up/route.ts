@@ -30,19 +30,19 @@ export async function POST(request: Request) {
         await existingUserByUsername.save();
         
         // Send verification email
-        const emailResponse = await sendVerificationEmail(
-          email,
-          username,
-          existingUserByUsername.verifyCode
-        );
-        if (!emailResponse.success) {
-          return Response.json(
-            {
-              success: false,
-              message: emailResponse.message,
-            },
-            { status: 500 }
+        try {
+          const emailResponse = await sendVerificationEmail(
+            email,
+            username,
+            existingUserByUsername.verifyCode
           );
+          if (!emailResponse.success) {
+            console.error('Email sending failed:', emailResponse.message);
+            // Don't fail the sign-up if email fails, just log it
+          }
+        } catch (emailError) {
+          console.error('Email service error:', emailError);
+          // Don't fail the sign-up if email service is down
         }
 
         return Response.json(
@@ -55,6 +55,7 @@ export async function POST(request: Request) {
       }
     }
 
+    // Check for existing user by email only if username is available
     const existingUserByEmail = await UserModel.findOne({ email });
     let verifyCode = Math.floor(100000 + Math.random() * 900000).toString();
 
@@ -68,8 +69,9 @@ export async function POST(request: Request) {
           { status: 400 }
         );
       } else {
-        // Update existing unverified user with new password and verification code
+        // Update existing unverified user with new username, password and verification code
         const hashedPassword = await bcrypt.hash(password, 10);
+        existingUserByEmail.username = username;
         existingUserByEmail.password = hashedPassword;
         existingUserByEmail.verifyCode = verifyCode;
         existingUserByEmail.verifyCodeExpiry = new Date(Date.now() + 3600000);
@@ -96,19 +98,19 @@ export async function POST(request: Request) {
     }
 
     // Send verification email
-    const emailResponse = await sendVerificationEmail(
-      email,
-      username,
-      verifyCode
-    );
-    if (!emailResponse.success) {
-      return Response.json(
-        {
-          success: false,
-          message: emailResponse.message,
-        },
-        { status: 500 }
+    try {
+      const emailResponse = await sendVerificationEmail(
+        email,
+        username,
+        verifyCode
       );
+      if (!emailResponse.success) {
+        console.error('Email sending failed:', emailResponse.message);
+        // Don't fail the sign-up if email fails, just log it
+      }
+    } catch (emailError) {
+      console.error('Email service error:', emailError);
+      // Don't fail the sign-up if email service is down
     }
 
     return Response.json(
@@ -120,10 +122,22 @@ export async function POST(request: Request) {
     );
   } catch (error) {
     console.error('Error registering user:', error);
+    
+    let errorMessage = 'Error registering user';
+    if (error instanceof Error) {
+      if (error.message.includes('MONGODB_URI')) {
+        errorMessage = 'Database connection failed. Please try again later.';
+      } else if (error.message.includes('duplicate key')) {
+        errorMessage = 'Username or email already exists.';
+      } else {
+        errorMessage = error.message;
+      }
+    }
+    
     return Response.json(
       {
         success: false,
-        message: 'Error registering user',
+        message: errorMessage,
       },
       { status: 500 }
     );
