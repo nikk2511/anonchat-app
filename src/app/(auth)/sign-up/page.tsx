@@ -46,7 +46,7 @@ export default function SignUpForm() {
 
   useEffect(() => {
     const checkUsernameUnique = async () => {
-      if (debouncedUsername[0] && debouncedUsername[0].length > 2) {
+      if (debouncedUsername[0] && debouncedUsername[0].length >= 2) {
         setIsCheckingUsername(true);
         setUsernameMessage('');
         try {
@@ -62,6 +62,9 @@ export default function SignUpForm() {
         } finally {
           setIsCheckingUsername(false);
         }
+      } else {
+        setUsernameMessage('');
+        setIsCheckingUsername(false);
       }
     };
     checkUsernameUnique();
@@ -77,7 +80,7 @@ export default function SignUpForm() {
         description: response.data.message,
       });
 
-      router.replace(`/verify/${username}`);
+      router.replace(`/verify/${data.username}`);
     } catch (error) {
       console.error('Error during sign-up:', error);
 
@@ -260,7 +263,7 @@ export default function SignUpForm() {
               >
                 <Button
                   type="submit"
-                  disabled={isSubmitting || usernameMessage !== 'Username is unique'}
+                  disabled={isSubmitting || isCheckingUsername || usernameMessage !== 'Username is unique'}
                   className="w-full h-12 text-lg font-semibold bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 transition-all"
                 >
                   {isSubmitting ? (
