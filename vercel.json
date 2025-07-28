@@ -11,10 +11,6 @@
     }
   },
   "env": {
-    "NEXTAUTH_URL": "@nextauth_url",
-    "NEXTAUTH_SECRET": "@nextauth_secret",
-    "MONGODB_URI": "@mongodb_uri",
-    "RESEND_API_KEY": "@resend_api_key",
-    "GEMINI_API_KEY": "@gemini_api_key"
+    "NODE_ENV": "production"
   }
 } 
