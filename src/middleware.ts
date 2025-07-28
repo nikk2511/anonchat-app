@@ -17,25 +17,25 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Allow access to auth pages when not authenticated
+  // TEMPORARILY DISABLE MIDDLEWARE REDIRECTS FOR DEBUGGING
+  // Just log what would happen but don't redirect
   if (!token) {
     if (url.pathname.startsWith('/dashboard')) {
-      console.log('Redirecting unauthenticated user to sign-in');
-      return NextResponse.redirect(new URL('/sign-in', request.url));
+      console.log('WOULD redirect unauthenticated user to sign-in, but allowing for debug');
+      // return NextResponse.redirect(new URL('/sign-in', request.url));
     }
-    // Allow access to sign-in, sign-up, verify, and home
     return NextResponse.next();
   }
 
-  // If authenticated, redirect from auth pages to dashboard
+  // If authenticated, don't redirect for now
   if (token &&
     (url.pathname === '/sign-in' ||
      url.pathname === '/sign-up' ||
      url.pathname.startsWith('/verify') ||
      url.pathname === '/')
   ) {
-    console.log('Redirecting authenticated user to dashboard');
-    return NextResponse.redirect(new URL('/dashboard', request.url));
+    console.log('WOULD redirect authenticated user to dashboard, but allowing for debug');
+    // return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
   return NextResponse.next();
