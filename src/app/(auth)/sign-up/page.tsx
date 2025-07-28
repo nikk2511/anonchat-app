@@ -47,10 +47,14 @@ export default function SignUpForm() {
 
   useEffect(() => {
     let isMounted = true;
+    let currentRequest: AbortController | null = null;
     
     const checkUsernameUnique = async () => {
+      console.log('Username check triggered:', debouncedUsername[0]);
+      
       // Clear message and loading state if username is empty or too short
       if (!debouncedUsername[0] || debouncedUsername[0].length < 2) {
+        console.log('Username too short or empty, clearing state');
         if (isMounted) {
           setUsernameMessage('');
           setIsCheckingUsername(false);
@@ -59,24 +63,37 @@ export default function SignUpForm() {
       }
 
       if (!isMounted) return;
+      
+      // Cancel previous request if it exists
+      if (currentRequest) {
+        console.log('Cancelling previous request');
+        currentRequest.abort();
+      }
+      
+      currentRequest = new AbortController();
       setIsCheckingUsername(true);
       setUsernameMessage('');
+      console.log('Starting username check for:', debouncedUsername[0]);
+      
       try {
         const response = await axios.get<ApiResponse>(
-          `/api/check-username-unique?username=${debouncedUsername[0]}`
+          `/api/check-username-unique?username=${debouncedUsername[0]}`,
+          { signal: currentRequest.signal }
         );
+        console.log('Username check response:', response.data);
         if (isMounted) {
           setUsernameMessage(response.data.message);
         }
       } catch (error) {
-        if (isMounted) {
+        if (isMounted && !axios.isCancel(error)) {
           const axiosError = error as AxiosError<ApiResponse>;
           const errorMessage = axiosError.response?.data?.message ?? 'Error checking username';
+          console.error('Username check error:', errorMessage);
           setUsernameMessage(errorMessage);
-          console.error('Username check error:', error);
         }
       } finally {
         if (isMounted) {
+          console.log('Username check completed, setting loading to false');
           setIsCheckingUsername(false);
         }
       }
@@ -84,7 +101,8 @@ export default function SignUpForm() {
 
     // Add a timeout to prevent infinite loading
     const timeoutId = setTimeout(() => {
-      if (isMounted && isCheckingUsername) {
+      if (isMounted) {
+        console.log('Username check timed out');
         setIsCheckingUsername(false);
         setUsernameMessage('Username check timed out. Please try again.');
       }
@@ -93,10 +111,14 @@ export default function SignUpForm() {
     checkUsernameUnique();
 
     return () => {
+      console.log('Cleaning up username check effect');
       isMounted = false;
       clearTimeout(timeoutId);
+      if (currentRequest) {
+        currentRequest.abort();
+      }
     };
-  }, [debouncedUsername, isCheckingUsername]);
+  }, [debouncedUsername]); // Removed isCheckingUsername from dependencies
 
   const onSubmit = async (data: z.infer<typeof signUpSchema>) => {
     // Additional validation before submission
@@ -137,15 +159,23 @@ export default function SignUpForm() {
   };
 
   const getUsernameStatus = () => {
+    // Don't show anything if username is empty or too short
+    if (!username || username.length < 2) {
+      return null;
+    }
+    
     if (isCheckingUsername) {
       return { icon: Loader2, className: "animate-spin text-muted-foreground", message: "Checking..." };
     }
+    
     if (usernameMessage === 'Username is unique') {
       return { icon: CheckCircle, className: "text-green-500", message: "Username available!" };
     }
+    
     if (usernameMessage && usernameMessage !== 'Username is unique') {
       return { icon: XCircle, className: "text-red-500", message: usernameMessage };
     }
+    
     return null;
   };
 
