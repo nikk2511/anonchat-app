@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/options';
 
+// Force this route to be dynamic since it uses server-side session
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
     console.log('=== AUTH FLOW TEST ===');
