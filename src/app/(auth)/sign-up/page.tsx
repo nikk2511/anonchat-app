@@ -46,30 +46,57 @@ export default function SignUpForm() {
   const debouncedUsername = useDebounceValue(username, 300);
 
   useEffect(() => {
+    let isMounted = true;
+    
     const checkUsernameUnique = async () => {
-      if (debouncedUsername[0] && debouncedUsername[0].length >= 2) {
-        setIsCheckingUsername(true);
-        setUsernameMessage('');
-        try {
-          const response = await axios.get<ApiResponse>(
-            `/api/check-username-unique?username=${debouncedUsername[0]}`
-          );
-          setUsernameMessage(response.data.message);
-        } catch (error) {
-          const axiosError = error as AxiosError<ApiResponse>;
-          setUsernameMessage(
-            axiosError.response?.data.message ?? 'Error checking username'
-          );
-        } finally {
+      // Clear message and loading state if username is empty or too short
+      if (!debouncedUsername[0] || debouncedUsername[0].length < 2) {
+        if (isMounted) {
+          setUsernameMessage('');
           setIsCheckingUsername(false);
         }
-      } else {
-        setUsernameMessage('');
-        setIsCheckingUsername(false);
+        return;
+      }
+
+      if (!isMounted) return;
+      setIsCheckingUsername(true);
+      setUsernameMessage('');
+      try {
+        const response = await axios.get<ApiResponse>(
+          `/api/check-username-unique?username=${debouncedUsername[0]}`
+        );
+        if (isMounted) {
+          setUsernameMessage(response.data.message);
+        }
+      } catch (error) {
+        if (isMounted) {
+          const axiosError = error as AxiosError<ApiResponse>;
+          const errorMessage = axiosError.response?.data?.message ?? 'Error checking username';
+          setUsernameMessage(errorMessage);
+          console.error('Username check error:', error);
+        }
+      } finally {
+        if (isMounted) {
+          setIsCheckingUsername(false);
+        }
       }
     };
+
+    // Add a timeout to prevent infinite loading
+    const timeoutId = setTimeout(() => {
+      if (isMounted && isCheckingUsername) {
+        setIsCheckingUsername(false);
+        setUsernameMessage('Username check timed out. Please try again.');
+      }
+    }, 10000); // 10 second timeout
+
     checkUsernameUnique();
-  }, [debouncedUsername]);
+
+    return () => {
+      isMounted = false;
+      clearTimeout(timeoutId);
+    };
+  }, [debouncedUsername, isCheckingUsername]);
 
   const onSubmit = async (data: z.infer<typeof signUpSchema>) => {
     // Additional validation before submission
@@ -271,7 +298,13 @@ export default function SignUpForm() {
               >
                 <Button
                   type="submit"
-                  disabled={isSubmitting || isCheckingUsername || (Boolean(username) && usernameMessage !== 'Username is unique')}
+                  disabled={
+                    isSubmitting || 
+                    isCheckingUsername || 
+                    (Boolean(username) && usernameMessage !== 'Username is unique') ||
+                    !username ||
+                    username.length < 2
+                  }
                   className="w-full h-12 text-lg font-semibold bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 transition-all"
                 >
                   {isSubmitting ? (
