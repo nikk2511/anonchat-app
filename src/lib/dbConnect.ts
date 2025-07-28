@@ -6,6 +6,9 @@ type ConnectionObject = {
 
 const connection: ConnectionObject = {}
 
+// Disable mongoose buffering globally to prevent timeout errors
+mongoose.set('bufferCommands', false);
+
 async function dbConnect(): Promise<void>
 {
     // Check if already connected
@@ -27,13 +30,14 @@ async function dbConnect(): Promise<void>
         console.log('MongoDB URI format check:', process.env.MONGODB_URI.startsWith('mongodb'));
         console.log('Environment:', process.env.NODE_ENV);
         
-        // Enhanced connection options for Vercel
+        // Enhanced connection options for Vercel - disable buffering to prevent timeout
         const db = await mongoose.connect(process.env.MONGODB_URI, {
             maxPoolSize: 10,
-            serverSelectionTimeoutMS: 10000, // Increased for Vercel
+            serverSelectionTimeoutMS: 30000, // Increased timeout for Vercel
             socketTimeoutMS: 45000,
-            connectTimeoutMS: 10000, // Added for Vercel
-            heartbeatFrequencyMS: 10000, // Added for better connection monitoring
+            connectTimeoutMS: 30000, // Increased for slow connections
+            heartbeatFrequencyMS: 10000,
+            bufferCommands: false, // Disable mongoose buffering
         });
 
         connection.isConnected = db.connections[0].readyState;
