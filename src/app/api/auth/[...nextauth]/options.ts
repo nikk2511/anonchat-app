@@ -10,7 +10,7 @@ export const authOptions: NextAuthOptions = {
       id: 'credentials',
       name: 'Credentials',
       credentials: {
-        email: { label: 'Email', type: 'text' },
+        identifier: { label: 'Email or Username', type: 'text' },
         password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials: any): Promise<any> {
@@ -22,26 +22,31 @@ export const authOptions: NextAuthOptions = {
               { username: credentials.identifier },
             ],
           });
+          
           if (!user) {
-            throw new Error('No user found with this email');
+            throw new Error('Invalid email/username or password');
           }
 
-          {/*
-          if (!user.isVerified) {
-            throw new Error('Please verify your account before logging in');
-          } 
-          */}
+          // Email verification bypassed for development
           const isPasswordCorrect = await bcrypt.compare(
             credentials.password,
             user.password
           );
+          
           if (isPasswordCorrect) {
-            return user;
+            return {
+              id: user._id?.toString() || '',
+              _id: user._id?.toString() || '',
+              username: user.username,
+              email: user.email,
+              isVerified: user.isVerified,
+              isAcceptingMessages: user.isAcceptingMessages
+            };
           } else {
-            throw new Error('Incorrect password');
+            throw new Error('Invalid email/username or password');
           }
         } catch (err: any) {
-          throw new Error(err);
+          throw new Error(err.message);
         }
       },
     }),
@@ -49,7 +54,7 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token._id = user._id?.toString(); // Convert ObjectId to string
+        token._id = user._id?.toString();
         token.isVerified = user.isVerified;
         token.isAcceptingMessages = user.isAcceptingMessages;
         token.username = user.username;
@@ -73,4 +78,5 @@ export const authOptions: NextAuthOptions = {
   pages: {
     signIn: '/sign-in',
   },
+
 };

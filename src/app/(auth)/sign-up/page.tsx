@@ -27,10 +27,9 @@ import { motion } from 'framer-motion';
 export default function SignUpForm() {
   const [username, setUsername] = useState('');
   const [usernameMessage, setUsernameMessage] = useState('');
-  const [isCheckingUsername, setIsCheckingUsername] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const debouncedUsername = useDebounceValue(username, 300);
+  const [debouncedUsername] = useDebounceValue(username, 500);
 
   const router = useRouter();
   const { toast } = useToast();
@@ -46,12 +45,11 @@ export default function SignUpForm() {
 
   useEffect(() => {
     const checkUsernameUnique = async () => {
-      if (debouncedUsername[0] && debouncedUsername[0].length > 2) {
-        setIsCheckingUsername(true);
+      if (debouncedUsername && debouncedUsername.length >= 2) {
         setUsernameMessage('');
         try {
           const response = await axios.get<ApiResponse>(
-            `/api/check-username-unique?username=${debouncedUsername[0]}`
+            `/api/check-username-unique?username=${encodeURIComponent(debouncedUsername)}`
           );
           setUsernameMessage(response.data.message);
         } catch (error) {
@@ -59,11 +57,14 @@ export default function SignUpForm() {
           setUsernameMessage(
             axiosError.response?.data.message ?? 'Error checking username'
           );
-        } finally {
-          setIsCheckingUsername(false);
         }
+      } else if (debouncedUsername && debouncedUsername.length > 0) {
+        setUsernameMessage('Username must be at least 2 characters');
+      } else {
+        setUsernameMessage('');
       }
     };
+    
     checkUsernameUnique();
   }, [debouncedUsername]);
 
@@ -77,7 +78,10 @@ export default function SignUpForm() {
         description: response.data.message,
       });
 
-      router.replace(`/verify/${username}`);
+      // Small delay to ensure database has committed the user
+      setTimeout(() => {
+        router.replace('/sign-in');
+      }, 500);
     } catch (error) {
       console.error('Error during sign-up:', error);
 
@@ -96,9 +100,6 @@ export default function SignUpForm() {
   };
 
   const getUsernameStatus = () => {
-    if (isCheckingUsername) {
-      return { icon: Loader2, className: "animate-spin text-muted-foreground", message: "Checking..." };
-    }
     if (usernameMessage === 'Username is unique') {
       return { icon: CheckCircle, className: "text-green-500", message: "Username available!" };
     }
@@ -260,7 +261,7 @@ export default function SignUpForm() {
               >
                 <Button
                   type="submit"
-                  disabled={isSubmitting || usernameMessage !== 'Username is unique'}
+                  disabled={isSubmitting || !!(usernameMessage && usernameMessage !== 'Username is unique')}
                   className="w-full h-12 text-lg font-semibold bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 transition-all"
                 >
                   {isSubmitting ? (
