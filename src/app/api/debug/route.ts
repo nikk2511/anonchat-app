@@ -2,8 +2,36 @@ import dbConnect from '@/lib/dbConnect';
 import UserModel from '@/model/User';
 import mongoose from 'mongoose';
 
+interface DebugInfo {
+  timestamp: string;
+  environment: {
+    MONGODB_URI: string;
+    NODE_ENV: string;
+  };
+  mongoose: {
+    readyState: number;
+    host: string;
+    port: number;
+    name: string;
+  };
+  connection: {
+    isConnected: boolean;
+    readyState: number;
+  };
+  database?: {
+    connected: boolean;
+    userCount: number;
+    testUserExists: boolean;
+    testUserVerified: boolean;
+  };
+  error?: {
+    message: string;
+    stack?: string;
+  };
+}
+
 export async function GET() {
-  const debugInfo = {
+  const debugInfo: DebugInfo = {
     timestamp: new Date().toISOString(),
     environment: {
       MONGODB_URI: process.env.MONGODB_URI ? 'Set' : 'Not set',
