@@ -41,49 +41,74 @@ export default function SignInForm() {
     console.log('Attempting sign-in for:', data.identifier);
     
     try {
+      // Method 1: Try with redirect: true first
       const result = await signIn('credentials', {
-        redirect: false,
         identifier: data.identifier,
         password: data.password,
+        callbackUrl: '/dashboard',
+        redirect: true,
       });
 
-      console.log('Sign-in result:', result);
+      // If we reach here, redirect: true didn't work, try manual approach
+      console.log('Sign-in result (should not reach here):', result);
+      
+    } catch (error) {
+      console.error('Sign-in with redirect failed, trying manual approach');
+      
+      // Fallback: Manual sign-in without redirect
+      try {
+        const result = await signIn('credentials', {
+          redirect: false,
+          identifier: data.identifier,
+          password: data.password,
+        });
 
-      if (result?.error) {
-        console.error('Sign-in error:', result.error);
+        console.log('Manual sign-in result:', result);
+
+        if (result?.error) {
+          console.error('Sign-in error:', result.error);
+          toast({
+            title: 'Login Failed',
+            description: result.error === 'CredentialsSignin' 
+              ? 'Invalid email/username or password' 
+              : result.error,
+            variant: 'destructive',
+          });
+        } else if (result?.ok) {
+          console.log('Sign-in successful, manual redirect');
+          toast({
+            title: 'Welcome back! 🎉',
+            description: 'Successfully signed in to your account.',
+          });
+          
+          // Force redirect with multiple methods
+          console.log('Attempting redirect to dashboard...');
+          
+          // Method 1: Router push
+          router.push('/dashboard');
+          
+          // Method 2: Window location as fallback
+          setTimeout(() => {
+            console.log('Fallback redirect...');
+            window.location.href = '/dashboard';
+          }, 500);
+          
+        } else {
+          console.log('Unexpected sign-in result:', result);
+          toast({
+            title: 'Login Failed',
+            description: 'An unexpected error occurred. Please try again.',
+            variant: 'destructive',
+          });
+        }
+      } catch (manualError) {
+        console.error('Manual sign-in failed:', manualError);
         toast({
-          title: 'Login Failed',
-          description: result.error === 'CredentialsSignin' 
-            ? 'Invalid email/username or password' 
-            : result.error,
-          variant: 'destructive',
-        });
-      } else if (result?.ok) {
-        console.log('Sign-in successful, redirecting to dashboard');
-        toast({
-          title: 'Welcome back! 🎉',
-          description: 'Successfully signed in to your account.',
-        });
-        
-        // Small delay to ensure session is established
-        setTimeout(() => {
-          window.location.href = '/dashboard';
-        }, 100);
-      } else {
-        console.log('Unexpected sign-in result:', result);
-        toast({
-          title: 'Login Failed',
-          description: 'An unexpected error occurred. Please try again.',
+          title: 'Error',
+          description: 'Something went wrong. Please try again.',
           variant: 'destructive',
         });
       }
-    } catch (error) {
-      console.error('Sign-in exception:', error);
-      toast({
-        title: 'Error',
-        description: 'Something went wrong. Please try again.',
-        variant: 'destructive',
-      });
     } finally {
       setIsLoading(false);
     }

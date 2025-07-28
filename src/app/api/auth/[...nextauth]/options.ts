@@ -86,10 +86,28 @@ export const authOptions: NextAuthOptions = {
     },
     async redirect({ url, baseUrl }) {
       console.log('NextAuth redirect callback:', { url, baseUrl });
+      
+      // Handle sign-in success - always redirect to dashboard
+      if (url === baseUrl || url === `${baseUrl}/` || url === `${baseUrl}/sign-in`) {
+        console.log('Redirecting to dashboard after sign-in');
+        return `${baseUrl}/dashboard`;
+      }
+      
       // Allows relative callback URLs
-      if (url.startsWith("/")) return `${baseUrl}${url}`;
+      if (url.startsWith("/")) {
+        const fullUrl = `${baseUrl}${url}`;
+        console.log('Relative URL redirect:', fullUrl);
+        return fullUrl;
+      }
+      
       // Allows callback URLs on the same origin
-      if (new URL(url).origin === baseUrl) return url;
+      if (new URL(url).origin === baseUrl) {
+        console.log('Same origin redirect:', url);
+        return url;
+      }
+      
+      // Default to dashboard
+      console.log('Default redirect to dashboard');
       return `${baseUrl}/dashboard`;
     },
   },
