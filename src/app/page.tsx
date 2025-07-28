@@ -1,36 +1,24 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Loader2, MessageSquare } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function HomePage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [debugInfo, setDebugInfo] = useState<any>(null);
 
-  // Fetch debug info
   useEffect(() => {
-    fetch('/api/debug-auth')
-      .then(res => res.json())
-      .then(data => setDebugInfo(data))
-      .catch(err => console.error('Debug fetch error:', err));
-  }, []);
-
-  // AUTO REDIRECT DISABLED FOR DEBUGGING
-  // useEffect(() => {
-  //   if (status === 'authenticated' && session) {
-  //     console.log('User authenticated, redirecting to dashboard');
-  //     router.replace('/dashboard');
-  //   } else if (status === 'unauthenticated') {
-  //     console.log('User not authenticated, redirecting to sign-in');
-  //     router.replace('/sign-in');
-  //   }
-  // }, [status, session, router]);
+    if (status === 'authenticated' && session) {
+      console.log('User authenticated, redirecting to dashboard');
+      router.replace('/dashboard');
+    } else if (status === 'unauthenticated') {
+      console.log('User not authenticated, redirecting to sign-in');
+      router.replace('/sign-in');
+    }
+  }, [status, session, router]);
 
   if (status === 'loading') {
     return (
@@ -41,6 +29,7 @@ export default function HomePage() {
           transition={{ duration: 0.5 }}
           className="text-center space-y-6"
         >
+          {/* Logo */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -53,6 +42,7 @@ export default function HomePage() {
             <span className="text-4xl font-bold gradient-text">AnonChat</span>
           </motion.div>
 
+          {/* Loading */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -61,79 +51,45 @@ export default function HomePage() {
           >
             <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
             <p className="text-lg text-muted-foreground">Loading your experience...</p>
+            <div className="flex justify-center space-x-1">
+              <motion.div
+                animate={{ scale: [1, 1.2, 1] }}
+                transition={{ duration: 1, repeat: Infinity, delay: 0 }}
+                className="w-2 h-2 bg-primary rounded-full"
+              />
+              <motion.div
+                animate={{ scale: [1, 1.2, 1] }}
+                transition={{ duration: 1, repeat: Infinity, delay: 0.2 }}
+                className="w-2 h-2 bg-primary rounded-full"
+              />
+              <motion.div
+                animate={{ scale: [1, 1.2, 1] }}
+                transition={{ duration: 1, repeat: Infinity, delay: 0.4 }}
+                className="w-2 h-2 bg-primary rounded-full"
+              />
+            </div>
           </motion.div>
+
+          {/* Footer */}
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.6 }}
+            className="text-sm text-muted-foreground mt-8"
+          >
+            🔒 Anonymous • Secure • Private
+          </motion.p>
         </motion.div>
       </div>
     );
   }
 
+  // This should not be reached due to useEffect redirects, but just in case
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <div className="max-w-2xl w-full space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <MessageSquare className="h-6 w-6" />
-              <span>AnonChat - Debug Mode</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Session Status */}
-            <div className="space-y-2">
-              <h3 className="text-lg font-semibold">Session Status</h3>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <strong>Status:</strong> {status}
-                </div>
-                <div>
-                  <strong>Has Session:</strong> {session ? 'Yes' : 'No'}
-                </div>
-                {session?.user && (
-                  <>
-                    <div>
-                      <strong>Username:</strong> {session.user.username}
-                    </div>
-                    <div>
-                      <strong>Email:</strong> {session.user.email}
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-
-            {/* Navigation */}
-            <div className="space-y-2">
-              <h3 className="text-lg font-semibold">Navigation</h3>
-              <div className="flex flex-wrap gap-2">
-                <Button onClick={() => router.push('/sign-in')}>
-                  Go to Sign In
-                </Button>
-                <Button onClick={() => router.push('/sign-up')}>
-                  Go to Sign Up
-                </Button>
-                <Button onClick={() => router.push('/dashboard')}>
-                  Go to Dashboard
-                </Button>
-                <Button 
-                  variant="outline" 
-                  onClick={() => window.location.reload()}
-                >
-                  Reload Page
-                </Button>
-              </div>
-            </div>
-
-            {/* Debug Info */}
-            {debugInfo && (
-              <div className="space-y-2">
-                <h3 className="text-lg font-semibold">Debug Info</h3>
-                <pre className="bg-muted p-4 rounded-lg text-xs overflow-auto max-h-96">
-                  {JSON.stringify(debugInfo, null, 2)}
-                </pre>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="text-center">
+        <h1 className="text-2xl font-bold mb-4">Welcome to AnonChat</h1>
+        <p className="text-muted-foreground">Redirecting...</p>
       </div>
     </div>
   );
