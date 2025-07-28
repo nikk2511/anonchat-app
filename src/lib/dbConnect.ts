@@ -37,8 +37,6 @@ async function dbConnect(): Promise<void> {
             maxPoolSize: 10,
             serverSelectionTimeoutMS: 5000,
             socketTimeoutMS: 45000,
-            bufferCommands: false,
-            bufferMaxEntries: 0,
         });
 
         connection.isConnected = db.connections[0].readyState;

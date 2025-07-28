@@ -2,6 +2,7 @@ import dbConnect from '@/lib/dbConnect';
 import UserModel from '@/model/User';
 import bcrypt from 'bcryptjs';
 import { sendVerificationEmail } from '@/helpers/sendVerificationEmail';
+import { signUpSchema } from '@/schemas/signUpSchema';
 
 export async function POST(request: Request) {
   try {
@@ -18,7 +19,27 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { username, email, password } = await request.json();
+    const requestBody = await request.json();
+    
+    // Validate input using Zod schema
+    const validation = signUpSchema.safeParse(requestBody);
+    if (!validation.success) {
+      const errors = validation.error.format();
+      return Response.json(
+        {
+          success: false,
+          message: 'Validation failed',
+          errors: {
+            username: errors.username?._errors || [],
+            email: errors.email?._errors || [],
+            password: errors.password?._errors || []
+          }
+        },
+        { status: 400 }
+      );
+    }
+
+    const { username, email, password } = validation.data;
 
     const existingUserByUsername = await UserModel.findOne({ username });
 
