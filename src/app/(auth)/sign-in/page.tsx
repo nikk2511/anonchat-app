@@ -38,6 +38,8 @@ export default function SignInForm() {
   
   const onSubmit = async (data: z.infer<typeof signInSchema>) => {
     setIsLoading(true);
+    console.log('Attempting sign-in for:', data.identifier);
+    
     try {
       const result = await signIn('credentials', {
         redirect: false,
@@ -45,27 +47,38 @@ export default function SignInForm() {
         password: data.password,
       });
 
+      console.log('Sign-in result:', result);
+
       if (result?.error) {
+        console.error('Sign-in error:', result.error);
         toast({
           title: 'Login Failed',
-          description: 'Invalid email/username or password',
+          description: result.error === 'CredentialsSignin' 
+            ? 'Invalid email/username or password' 
+            : result.error,
           variant: 'destructive',
         });
       } else if (result?.ok) {
+        console.log('Sign-in successful, redirecting to dashboard');
         toast({
           title: 'Welcome back! 🎉',
           description: 'Successfully signed in to your account.',
         });
-        // Force a page reload to ensure session is properly established
-        window.location.href = '/dashboard';
+        
+        // Small delay to ensure session is established
+        setTimeout(() => {
+          window.location.href = '/dashboard';
+        }, 100);
       } else {
+        console.log('Unexpected sign-in result:', result);
         toast({
           title: 'Login Failed',
-          description: 'An unexpected error occurred',
+          description: 'An unexpected error occurred. Please try again.',
           variant: 'destructive',
         });
       }
     } catch (error) {
+      console.error('Sign-in exception:', error);
       toast({
         title: 'Error',
         description: 'Something went wrong. Please try again.',
@@ -141,7 +154,7 @@ export default function SignInForm() {
                       <Input
                         {...field}
                         placeholder="Enter your email or username"
-                        className="pl-10 h-12 bg-background/50 border-border/50 focus:bg-background focus:border-primary/50 transition-all"
+                        className="pl-10 h-12 bg-background/50 border-border/50 focus:bg-background focus:border-primary/50 transition-all form-input focus-ring"
                       />
                     </div>
                     <FormMessage />
@@ -161,7 +174,7 @@ export default function SignInForm() {
                         {...field}
                         type={showPassword ? "text" : "password"}
                         placeholder="Enter your password"
-                        className="pl-10 pr-10 h-12 bg-background/50 border-border/50 focus:bg-background focus:border-primary/50 transition-all"
+                        className="pl-10 pr-10 h-12 bg-background/50 border-border/50 focus:bg-background focus:border-primary/50 transition-all form-input focus-ring"
                       />
                       <button
                         type="button"
@@ -183,7 +196,7 @@ export default function SignInForm() {
                 <Button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full h-12 text-lg font-semibold bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 transition-all"
+                  className="w-full h-12 text-lg font-semibold btn-primary focus-ring"
                 >
                   {isLoading ? (
                     <div className="flex items-center space-x-2">

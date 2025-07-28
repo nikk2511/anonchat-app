@@ -140,26 +140,13 @@ function UserDashboard() {
     }
   };
 
-  if (status === 'loading') {
+  // Loading and authentication states are now handled by the layout
+  if (status === 'loading' || !session?.user) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
           <p className="text-muted-foreground">Loading your dashboard...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (status === 'unauthenticated' || !session?.user) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center space-y-4">
-          <h2 className="text-xl font-semibold">Access Denied</h2>
-          <p className="text-muted-foreground">Please sign in to access your dashboard.</p>
-          <Button onClick={() => window.location.href = '/sign-in'}>
-            Go to Sign In
-          </Button>
         </div>
       </div>
     );
