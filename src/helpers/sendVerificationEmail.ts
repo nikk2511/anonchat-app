@@ -8,6 +8,11 @@ export async function sendVerificationEmail(
     verifyCode: string
 ): Promise<ApiResponse> 
 {
+    if (!resend) {
+        console.warn('Resend is not configured. Skipping email send.');
+        return {success: false, message: "Email service not configured"}
+    }
+
     try {
         // Validate inputs
         if (!email || !username || !verifyCode) {
