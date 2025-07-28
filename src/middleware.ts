@@ -17,24 +17,25 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Allow access to auth pages when not authenticated
+  // Allow access to home page, auth pages, and public pages when not authenticated
   if (!token) {
-    if (url.pathname.startsWith('/dashboard')) {
-      console.log('Redirecting unauthenticated user to sign-in');
+    // Only redirect to sign-in if trying to access protected routes (like dashboard)
+    if (url.pathname.startsWith('/dashboard') || url.pathname.startsWith('/settings')) {
+      console.log('Redirecting unauthenticated user to sign-in from protected route');
       return NextResponse.redirect(new URL('/sign-in', request.url));
     }
-    // Allow access to sign-in, sign-up, verify, and home
+    // Allow access to home, sign-in, sign-up, verify pages
+    console.log('Allowing unauthenticated access to public page');
     return NextResponse.next();
   }
 
-  // If authenticated, redirect from auth pages to dashboard
+  // If authenticated, redirect from auth pages to dashboard (but allow home page)
   if (token &&
     (url.pathname === '/sign-in' ||
      url.pathname === '/sign-up' ||
-     url.pathname.startsWith('/verify') ||
-     url.pathname === '/')
+     url.pathname.startsWith('/verify'))
   ) {
-    console.log('Redirecting authenticated user to dashboard');
+    console.log('Redirecting authenticated user from auth page to dashboard');
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 

@@ -87,15 +87,21 @@ export const authOptions: NextAuthOptions = {
     async redirect({ url, baseUrl }) {
       console.log('NextAuth redirect callback:', { url, baseUrl });
       
-      // If explicitly signing out or going to sign-in, allow it
-      if (url.includes('/api/auth/signout') || url.includes('/sign-in') || url === `${baseUrl}/sign-in`) {
-        console.log('Allowing sign-out or sign-in redirect');
+      // If explicitly signing out, redirect to home page
+      if (url.includes('/api/auth/signout')) {
+        console.log('Allowing sign-out redirect to home');
+        return baseUrl;
+      }
+      
+      // If going to sign-in page, allow it
+      if (url.includes('/sign-in') || url === `${baseUrl}/sign-in`) {
+        console.log('Allowing redirect to sign-in');
         return url;
       }
       
-      // Handle sign-in success - redirect to dashboard
-      if (url === baseUrl || url === `${baseUrl}/` || url.includes('/api/auth/signin')) {
-        console.log('Redirecting to dashboard after sign-in');
+      // ONLY redirect to dashboard after actual sign-in success (not just visiting home)
+      if (url.includes('/api/auth/signin') || url.includes('callbackUrl')) {
+        console.log('Redirecting to dashboard after successful sign-in');
         return `${baseUrl}/dashboard`;
       }
       
@@ -112,9 +118,9 @@ export const authOptions: NextAuthOptions = {
         return url;
       }
       
-      // Default to sign-in for safety
-      console.log('Default redirect to sign-in');
-      return `${baseUrl}/sign-in`;
+      // Default: allow the original URL (don't force redirect)
+      console.log('Default: allowing original URL:', url);
+      return url;
     },
   },
   session: {
