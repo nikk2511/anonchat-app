@@ -1,12 +1,14 @@
 import dbConnect from '@/lib/dbConnect';
+import dbConnectWithBuffer from '@/lib/dbConnectWithBuffer';
 import UserModel from '@/model/User';
 import bcrypt from 'bcryptjs';
 import { sendVerificationEmail } from '@/helpers/sendVerificationEmail';
 
 export async function POST(request: Request) {
   try {
-    // Ensure database connection
-    await dbConnect();
+    // Use buffered connection for critical signup operations to prevent race conditions
+    console.log('Starting signup process...');
+    await dbConnectWithBuffer();
     
     // Validate request body
     const body = await request.json();

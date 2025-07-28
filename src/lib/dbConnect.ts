@@ -11,11 +11,22 @@ mongoose.set('bufferCommands', false);
 
 async function dbConnect(): Promise<void>
 {
-    // Check if already connected
-    if(connection.isConnected)
+    // Check if already connected and ready for operations
+    if(connection.isConnected && mongoose.connection.readyState === 1)
     {
         console.log('Already connected to Database')
         return; 
+    }
+    
+    // If connection exists but not ready, wait for it
+    if(mongoose.connection.readyState === 2) { // connecting
+        console.log('Connection in progress, waiting...');
+        await new Promise((resolve) => {
+            mongoose.connection.once('connected', resolve);
+        });
+        connection.isConnected = mongoose.connection.readyState;
+        console.log('Connection established, ready for operations');
+        return;
     }
 
     // Validate MongoDB URI exists
@@ -42,9 +53,15 @@ async function dbConnect(): Promise<void>
 
         connection.isConnected = db.connections[0].readyState;
 
+        // Ensure connection is fully ready for operations
+        if (db.connections[0].readyState !== 1) {
+            throw new Error('Connection established but not ready for operations');
+        }
+
         console.log("DB connected Successfully");
         console.log(`Connected to: ${db.connection.name}`);
         console.log(`Connection state: ${db.connections[0].readyState}`);
+        console.log('Connection ready for database operations');
 
     } catch (error: any) {
         console.error('=== DATABASE CONNECTION ERROR ===');
