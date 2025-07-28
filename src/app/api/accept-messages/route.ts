@@ -6,7 +6,18 @@ import { User } from 'next-auth';
 
 export async function POST(request: Request) {
   // Connect to the database
-  await dbConnect();
+  try {
+    await dbConnect();
+  } catch (error) {
+    console.error('Database connection failed:', error);
+    return Response.json(
+      {
+        success: false,
+        message: 'Database connection failed. Please try again later.',
+      },
+      { status: 500 }
+    );
+  }
 
   const session = await getServerSession(authOptions);
   const user: User = session?.user;
@@ -60,7 +71,18 @@ export async function POST(request: Request) {
 
 export async function GET(request: Request) {
   // Connect to the database
-  await dbConnect();
+  try {
+    await dbConnect();
+  } catch (error) {
+    console.error('Database connection failed:', error);
+    return Response.json(
+      {
+        success: false,
+        message: 'Database connection failed. Please try again later.',
+      },
+      { status: 500 }
+    );
+  }
 
   // Get the user session
   const session = await getServerSession(authOptions);

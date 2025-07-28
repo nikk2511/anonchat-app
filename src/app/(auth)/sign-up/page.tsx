@@ -271,7 +271,7 @@ export default function SignUpForm() {
               >
                 <Button
                   type="submit"
-                  disabled={isSubmitting || isCheckingUsername || (username && usernameMessage !== 'Username is unique')}
+                  disabled={isSubmitting || isCheckingUsername || (Boolean(username) && usernameMessage !== 'Username is unique')}
                   className="w-full h-12 text-lg font-semibold bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 transition-all"
                 >
                   {isSubmitting ? (
