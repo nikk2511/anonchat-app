@@ -32,7 +32,6 @@ import { useForm } from 'react-hook-form';
 import { AcceptMessageSchema } from '@/schemas/acceptMessageSchema';
 import { motion } from 'framer-motion';
 import dayjs from 'dayjs';
-import Navbar from '@/components/Navbar';
 
 function UserDashboard() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -47,7 +46,7 @@ function UserDashboard() {
     setMessages(messages.filter((message) => message._id !== messageId));
   };
 
-  const { data: session, status } = useSession();
+  const { data: session } = useSession();
 
   const form = useForm({
     resolver: zodResolver(AcceptMessageSchema),
@@ -141,16 +140,12 @@ function UserDashboard() {
     }
   };
 
-  // Loading and authentication states
-  if (status === 'loading' || !session?.user) {
+  if (!session || !session.user) {
     return (
-      <div className="min-h-screen bg-background">
-        <Navbar />
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="text-center">
-            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
-            <p className="text-muted-foreground">Loading your dashboard...</p>
-          </div>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
+          <p className="text-muted-foreground">Loading your dashboard...</p>
         </div>
       </div>
     );
@@ -203,214 +198,211 @@ function UserDashboard() {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navbar />
-      <div className="min-h-screen bg-muted/30">
-        <div className="container mx-auto py-8 px-4 space-y-8">
-          {/* Header */}
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex flex-col md:flex-row md:items-center md:justify-between gap-4"
+    <div className="min-h-screen bg-muted/30">
+      <div className="container mx-auto py-8 px-4 space-y-8">
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex flex-col md:flex-row md:items-center md:justify-between gap-4"
+        >
+          <div>
+            <h1 className="text-3xl md:text-4xl font-bold text-foreground">
+              Welcome back, {username}! 👋
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              Manage your anonymous messages and settings
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            onClick={(e) => {
+              e.preventDefault();
+              fetchMessages(true);
+            }}
+            disabled={isLoading}
+            className="self-start md:self-auto"
           >
+            {isLoading ? (
+              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+            ) : (
+              <RefreshCcw className="h-4 w-4 mr-2" />
+            )}
+            Refresh
+          </Button>
+        </motion.div>
+
+        {/* Stats Cards */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="grid grid-cols-1 md:grid-cols-3 gap-6"
+        >
+          {stats.map((stat, index) => (
+            <Card key={index} className="border-0 shadow-lg">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">
+                    {stat.title}
+                  </CardTitle>
+                  <stat.icon className={`h-4 w-4 ${stat.color}`} />
+                </div>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="text-2xl font-bold">{stat.value}</div>
+                <p className="text-xs text-muted-foreground">{stat.description}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </motion.div>
+
+        {/* Profile Link Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <Card className="border-0 shadow-lg">
+            <CardHeader>
+              <div className="flex items-center space-x-2">
+                <LinkIcon className="h-5 w-5 text-primary" />
+                <CardTitle>Your Anonymous Message Link</CardTitle>
+              </div>
+              <CardDescription>
+                Share this link with others to receive anonymous messages
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="flex-1 relative">
+                  <input
+                    type="text"
+                    value={profileUrl}
+                    readOnly
+                    className="w-full px-4 py-3 text-sm bg-muted rounded-lg border border-border focus:outline-none focus:ring-2 focus:ring-primary/20 font-mono"
+                  />
+                </div>
+                <Button
+                  onClick={copyToClipboard}
+                  className="shrink-0"
+                  disabled={copied}
+                >
+                  {copied ? (
+                    <>
+                      <Mail className="h-4 w-4 mr-2" />
+                      Copied!
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-4 w-4 mr-2" />
+                      Copy Link
+                    </>
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Message Settings */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
+          <Card className="border-0 shadow-lg">
+            <CardHeader>
+              <div className="flex items-center space-x-2">
+                <Settings className="h-5 w-5 text-primary" />
+                <CardTitle>Message Settings</CardTitle>
+              </div>
+              <CardDescription>
+                Control whether you&apos;re accepting new messages
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <Switch
+                    checked={acceptMessages}
+                    onCheckedChange={handleSwitchChange}
+                    disabled={isSwitchLoading}
+                  />
+                  <div>
+                    <p className="font-medium">Accept Messages</p>
+                    <p className="text-sm text-muted-foreground">
+                      {acceptMessages 
+                        ? 'You are currently accepting anonymous messages' 
+                        : 'You are not accepting new messages'
+                      }
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2">
+                  {isSwitchLoading && (
+                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                  )}
+                  <Badge variant={acceptMessages ? "default" : "secondary"}>
+                    {acceptMessages ? 'Active' : 'Inactive'}
+                  </Badge>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Messages Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="space-y-6"
+        >
+          <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl md:text-4xl font-bold text-foreground">
-                Welcome back, {username}! 👋
-              </h1>
-              <p className="text-muted-foreground mt-1">
-                Manage your anonymous messages and settings
+              <h2 className="text-2xl font-bold text-foreground">Your Messages</h2>
+              <p className="text-muted-foreground">
+                {messages.length > 0 
+                  ? `You have ${messages.length} message${messages.length === 1 ? '' : 's'}`
+                  : 'No messages yet'
+                }
               </p>
             </div>
-            <Button
-              variant="outline"
-              onClick={(e) => {
-                e.preventDefault();
-                fetchMessages(true);
-              }}
-              disabled={isLoading}
-              className="self-start md:self-auto"
-            >
-              {isLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              ) : (
-                <RefreshCcw className="h-4 w-4 mr-2" />
-              )}
-              Refresh
-            </Button>
-          </motion.div>
+          </div>
 
-          {/* Stats Cards */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="grid grid-cols-1 md:grid-cols-3 gap-6"
-          >
-            {stats.map((stat, index) => (
-              <Card key={index} className="border-0 shadow-lg">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-sm font-medium text-muted-foreground">
-                      {stat.title}
-                    </CardTitle>
-                    <stat.icon className={`h-4 w-4 ${stat.color}`} />
-                  </div>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <div className="text-2xl font-bold">{stat.value}</div>
-                  <p className="text-xs text-muted-foreground">{stat.description}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </motion.div>
-
-          {/* Profile Link Card */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            <Card className="border-0 shadow-lg">
-              <CardHeader>
-                <div className="flex items-center space-x-2">
-                  <LinkIcon className="h-5 w-5 text-primary" />
-                  <CardTitle>Your Anonymous Message Link</CardTitle>
-                </div>
-                <CardDescription>
-                  Share this link with others to receive anonymous messages
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <div className="flex-1 relative">
-                    <input
-                      type="text"
-                      value={profileUrl}
-                      readOnly
-                      className="w-full px-4 py-3 text-sm bg-muted rounded-lg border border-border focus:outline-none focus:ring-2 focus:ring-primary/20 font-mono"
-                    />
-                  </div>
-                  <Button
-                    onClick={copyToClipboard}
-                    className="shrink-0"
-                    disabled={copied}
-                  >
-                    {copied ? (
-                      <>
-                        <Mail className="h-4 w-4 mr-2" />
-                        Copied!
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="h-4 w-4 mr-2" />
-                        Copy Link
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          {/* Message Settings */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-          >
-            <Card className="border-0 shadow-lg">
-              <CardHeader>
-                <div className="flex items-center space-x-2">
-                  <Settings className="h-5 w-5 text-primary" />
-                  <CardTitle>Message Settings</CardTitle>
-                </div>
-                <CardDescription>
-                  Control whether you&apos;re accepting new messages
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <Switch
-                      checked={acceptMessages}
-                      onCheckedChange={handleSwitchChange}
-                      disabled={isSwitchLoading}
-                    />
-                    <div>
-                      <p className="font-medium">Accept Messages</p>
-                      <p className="text-sm text-muted-foreground">
-                        {acceptMessages 
-                          ? 'You are currently accepting anonymous messages' 
-                          : 'You are not accepting new messages'
-                        }
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    {isSwitchLoading && (
-                      <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                    )}
-                    <Badge variant={acceptMessages ? "default" : "secondary"}>
-                      {acceptMessages ? 'Active' : 'Inactive'}
-                    </Badge>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          {/* Messages Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="space-y-6"
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-2xl font-bold text-foreground">Your Messages</h2>
-                <p className="text-muted-foreground">
-                  {messages.length > 0 
-                    ? `You have ${messages.length} message${messages.length === 1 ? '' : 's'}`
-                    : 'No messages yet'
-                  }
-                </p>
-              </div>
+          {messages.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              {messages.map((message, index) => (
+                <motion.div
+                  key={message.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 * index }}
+                >
+                  <MessageCard
+                    message={message}
+                    onMessageDelete={handleDeleteMessage}
+                  />
+                </motion.div>
+              ))}
             </div>
-
-            {messages.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {messages.map((message, index) => (
-                  <motion.div
-                    key={message.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 * index }}
-                  >
-                    <MessageCard
-                      message={message}
-                      onMessageDelete={handleDeleteMessage}
-                    />
-                  </motion.div>
-                ))}
-              </div>
-            ) : (
-              <Card className="border-0 shadow-lg">
-                <CardContent className="py-12 text-center">
-                  <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">No messages yet</h3>
-                  <p className="text-muted-foreground mb-6">
-                    Share your profile link to start receiving anonymous messages!
-                  </p>
-                  <Button onClick={copyToClipboard} variant="outline">
-                    <Copy className="h-4 w-4 mr-2" />
-                    Copy Your Link
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
-          </motion.div>
-        </div>
+          ) : (
+            <Card className="border-0 shadow-lg">
+              <CardContent className="py-12 text-center">
+                <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">No messages yet</h3>
+                <p className="text-muted-foreground mb-6">
+                  Share your profile link to start receiving anonymous messages!
+                </p>
+                <Button onClick={copyToClipboard} variant="outline">
+                  <Copy className="h-4 w-4 mr-2" />
+                  Copy Your Link
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+        </motion.div>
       </div>
     </div>
   );
