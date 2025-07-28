@@ -4,6 +4,9 @@ import bcrypt from 'bcryptjs';
 import { sendVerificationEmail } from '@/helpers/sendVerificationEmail';
 import { signUpSchema } from '@/schemas/signUpSchema';
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: Request) {
   try {
     await dbConnect();

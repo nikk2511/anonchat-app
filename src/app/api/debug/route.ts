@@ -2,11 +2,15 @@ import dbConnect from '@/lib/dbConnect';
 import UserModel from '@/model/User';
 import mongoose from 'mongoose';
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic';
+
 interface DebugInfo {
   timestamp: string;
   environment: {
     MONGODB_URI: string;
     NODE_ENV: string;
+    VERCEL?: string;
   };
   mongoose: {
     readyState: number;
@@ -36,6 +40,7 @@ export async function GET() {
     environment: {
       MONGODB_URI: process.env.MONGODB_URI ? 'Set' : 'Not set',
       NODE_ENV: process.env.NODE_ENV || 'Not set',
+      VERCEL: process.env.VERCEL || undefined,
     },
     mongoose: {
       readyState: mongoose.connection.readyState,
@@ -48,6 +53,22 @@ export async function GET() {
       readyState: mongoose.connection.readyState,
     }
   };
+
+  // In build environments, skip database testing to prevent build failures
+  if (process.env.NODE_ENV === 'production' && process.env.VERCEL) {
+    debugInfo.database = {
+      connected: false,
+      userCount: 0,
+      testUserExists: false,
+      testUserVerified: false,
+    };
+
+    return Response.json({
+      success: true,
+      message: 'Debug info collected (database test skipped during build)',
+      debug: debugInfo
+    });
+  }
 
   try {
     console.log('Debug: Attempting database connection...');
