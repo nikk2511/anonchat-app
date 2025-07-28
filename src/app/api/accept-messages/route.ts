@@ -4,6 +4,9 @@ import dbConnect from '@/lib/dbConnect';
 import UserModel from '@/model/User';
 import { User } from 'next-auth';
 
+// Force this route to be dynamic since it uses server-side session
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: Request) {
   // Connect to the database
   try {
