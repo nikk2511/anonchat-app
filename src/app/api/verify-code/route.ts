@@ -1,6 +1,9 @@
 import dbConnect from '@/lib/dbConnect';
 import UserModel from '@/model/User';
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: Request) {
   // Connect to the database
   await dbConnect();
